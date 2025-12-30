@@ -10,7 +10,6 @@ import logging
 import ntpath
 import os
 import shutil
-import sys
 
 import django_drf_filepond.drf_filepond_settings as local_settings
 from django.core.exceptions import ImproperlyConfigured

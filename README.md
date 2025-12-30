@@ -241,6 +241,14 @@ _**Parameters:**_
 
 `destination_file_path`: The location where the file should be stored. This location will be appended to the base file storage location as defined using the `DJANGO_DRF_FILEPOND_FILE_STORE_PATH` parameter, or, for remote storage backends, the location configured using the relevant *django-storages* parameters. If you pass an absolute path beginning with `/`, the leading `/` will be removed. The path that you provide should also include the target filename.
 
+`_rename_if_exists_` (optional, default value: `False`): If `rename_if_exists`
+is `False` (the default value if not specified), an error will be thrown if the
+file cannot be stored to the specified filename. If `rename_if_exists` is
+`True`, an underscore (_) followed by a number (from 2 upwards) will be
+appended to the filename prior to any file extension. If a file with _2 at the
+end of the name (but prior to the extension) already exists, the number will be
+continually incremented until an available filename is found.
+
 _**Returns:**_
 
 A `django_drf_filepond.models.StoredUpload` object representing the stored upload.
