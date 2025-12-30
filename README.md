@@ -363,6 +363,15 @@ The above list includes all the permission names currently defined on django-drf
 
 ### Release notes
 
+##### v0.5.2
+
+django-drf-filepond v0.5.2 includes the following additional functionality from
+v0.5.1: 
+
+ - Add `rename_if_exists` parameter to `store_upload` API call to support
+   automatic renaming of files being saved to the file store if the requested
+   filename exists (#120).
+
 ##### v0.5.1
 
 Maintenance release that updates dependency versions and fixes the test
