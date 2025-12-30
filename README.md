@@ -363,6 +363,11 @@ The above list includes all the permission names currently defined on django-drf
 
 ### Release notes
 
+##### v0.5.1
+
+Maintenance release that updates dependency versions and fixes the test
+infrastructure to take account of some changes in GitHub Actions. 
+
 ##### v0.5.0
 
 django-drf-filepond v0.5.0 includes additional functionality and bug fixes:
