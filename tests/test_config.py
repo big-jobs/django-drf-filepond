@@ -9,7 +9,7 @@ import os
 
 from django.test import TestCase
 from django.conf import settings
-from six.moves import reload_module
+from importlib import reload as reload_module
 
 from django_drf_filepond.utils import _get_file_id
 import django_drf_filepond

@@ -7,11 +7,7 @@ from rest_framework.response import Response
 
 from django_drf_filepond.utils import _get_file_id
 
-# Python 2/3 support
-try:
-    from unittest.mock import patch
-except ImportError:
-    from mock import patch
+from unittest.mock import patch
 
 LOG = logging.getLogger(__name__)
 #

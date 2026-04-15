@@ -39,11 +39,6 @@ LOG = logging.getLogger(__name__)
 LOAD_RESTORE_PARAM_NAME = 'id'
 
 
-# There's no built in FileNotFoundError in Python 2
-try:
-    FileNotFoundError
-except NameError:
-    FileNotFoundError = IOError
 
 
 # FIXME: This is a very basic approach to working out the MIME type.

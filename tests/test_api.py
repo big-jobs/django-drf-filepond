@@ -25,22 +25,7 @@ import django_drf_filepond.drf_filepond_settings as local_settings
 from django.core.exceptions import ImproperlyConfigured
 from django_drf_filepond.api import _store_upload_local
 
-# There's no built in FileNotFoundError, FileExistsError in Python 2
-try:
-    FileNotFoundError
-except NameError:
-    FileNotFoundError = IOError
-
-try:
-    FileExistsError
-except NameError:
-    FileExistsError = OSError
-
-# Python 2/3 support
-try:
-    from unittest.mock import patch
-except ImportError:
-    from mock import patch
+from unittest.mock import patch
 
 LOG = logging.getLogger(__name__)
 
@@ -48,11 +33,27 @@ LOG = logging.getLogger(__name__)
 #########################################################################
 # Tests for store_upload:
 #
+# test_store_upload_default_name: Test that we can successfully store an
+#    upload with the default name that it was upload with, given a valid ID
+#
+# test_store_upload_rename_false: Test that we can successfully store an
+#    upload with a valid ID and path with rename_if_exists set to false
+#
+# test_store_upload_rename_true: Test that we can successfully store an
+#    upload with a valid ID and path with rename_if_exists set to true.
+#    Rename true should have no effect.
+#
 # test_store_upload_unset_file_store_path: Call store_upload with the file
 #    store path in settings unset. An exception should be raised.
 #
 # test_store_upload_invalid_id: Call store_upload with an invalid ID that
 #    doesn't fit the required ID format.
+#
+# test_store_upload_invalid_id_rename_false: Call store_upload with an invalid
+#    ID that doesn't fit the required ID format (rename_if_exists=false).
+#
+# test_store_upload_invalid_id_rename_true: Call store_upload with an invalid
+#    ID that doesn't fit the required ID format (rename_if_exists=true).
 #
 # test_store_upload_invalid_id_correct_format: Call store_upload with an
 #    invalid ID that is of the correct format.
@@ -88,6 +89,18 @@ LOG = logging.getLogger(__name__)
 #
 # test_store_upload_local_direct_file_exists: Call _store_upload_local with
 #    a target file that already exists. Expect a FileExistsError
+# 
+# test_store_upload_local_direct_file_exists_rename_false: Call 
+#    _store_upload_local with a target file that already exists and
+#    rename_if_exists explicitly set to false. Expect a FileExistsError
+# 
+# test_store_upload_local_direct_file_exists_rename_true: Call 
+#    _store_upload_local with a target file that already exists and
+#    rename_if_exists set true. Expect success and filename with _2 appended
+#
+# test_store_upload_local_direct_2files_exist_rename_true: Call 
+#    _store_upload_local with target file and second option (_2) already
+#    present. Expect success and resulting filename with _3 appended
 #
 # test_store_upload_local_direct_no_file_store_path: Call store_upload with
 #    the file store path in settings unset. An exception should be raised.
@@ -124,6 +137,40 @@ class ApiTestCase(TestCase):
                               file=uploaded_file, upload_name=self.fn,
                               upload_type=TemporaryUpload.FILE_DATA)
         tu2.save()
+
+    # Test that we can successfully store an upload with the default name
+    # that it was upload with, given a valid ID
+    def test_store_upload_default_name(self):
+        su = store_upload(self.upload_id, '/test_storage/')
+        LOG.debug('_test_store_upload_default_name: Stored file <%s>'
+                  % su.file)
+        self.assertEqual(
+            self.fn, os.path.basename(su.file.name),
+            'File has been stored with wrong filename <%s> in the database.'
+            % su.file.name)
+
+    # test_store_upload_rename_false: Test that we can successfully store an
+    #    upload with a valid ID and path with rename_if_exists set to false
+    def test_store_upload_rename_false(self):
+        su = store_upload(self.upload_id, '/test_storage/',
+                          rename_if_exists=False)
+        LOG.debug('test_store_upload_rename_false: Stored file <%s>'
+                  % su.file)
+        self.assertEqual(self.fn, os.path.basename(su.file.name), 
+                         'File has been stored with wrong filename <%s> in '
+                         'database.' % su.file.name)
+
+    # test_store_upload_rename_true: Test that we can successfully store an
+    #    upload with a valid ID and path with rename_if_exists set to true.
+    #    Rename true should have no effect.
+    def test_store_upload_rename_true(self):
+        su = store_upload(self.upload_id, '/test_storage/',
+                          rename_if_exists=False)
+        LOG.debug('test_store_upload_rename_true: Stored file <%s>'
+                  % su.file)
+        self.assertEqual(self.fn, os.path.basename(su.file.name),
+                         'File has been stored with wrong filename <%s> in '
+                         'database.' % su.file.name)
 
     def test_store_upload_unset_file_store_path(self):
         fsp = local_settings.FILE_STORE_PATH
@@ -320,18 +367,56 @@ class ApiTestCase(TestCase):
             _store_upload_local('/test_storage', 'test_file.txt', None)
         local_settings.FILE_STORE_PATH = fsp
 
-    def test_store_upload_local_direct_file_exists(self):
+    def _test_store_upload_local_setup(self):
         filestore_base = getattr(local_settings, 'FILE_STORE_PATH', None)
         target_file_dir = os.path.join(filestore_base, 'test_storage')
         os.mkdir(target_file_dir)
         with open(os.path.join(target_file_dir, 'testfile.txt'), 'a') as f:
             f.write('\n')
-        tu = TemporaryUpload.objects.get(upload_id=self.upload_id)
+        return TemporaryUpload.objects.get(upload_id=self.upload_id)
+
+    def test_store_upload_local_direct_file_exists(self):
+        tu = self._test_store_upload_local_setup()
         with self.assertRaisesMessage(
                 FileExistsError,
                 'The specified temporary file cannot be stored to the '
                 'specified location - file exists.'):
             _store_upload_local('/test_storage', 'testfile.txt', tu)
+
+    # Call _store_upload_local with a target file that already exists and
+    # rename_if_exists explicitly set to false. Expect a FileExistsError
+    def test_store_upload_local_direct_file_exists_rename_false(self):
+        tu = self._test_store_upload_local_setup()
+        with self.assertRaisesMessage(
+                FileExistsError,
+                'The specified temporary file cannot be stored to the '
+                'specified location - file exists.'):
+            _store_upload_local('/test_storage', 'testfile.txt', tu, False)
+
+    # Call _store_upload_local with a target file that already exists and
+    # rename_if_exists set true. Expect success and filename with _2 appended
+    def test_store_upload_local_direct_file_exists_rename_true(self):
+        tu = self._test_store_upload_local_setup()
+        su = _store_upload_local('/test_storage', 'testfile.txt', tu, True)
+        self.assertEqual(
+            os.path.basename(su.file.name), 'testfile_2.txt',
+            'The file was not stored with the expected renamed filename.')
+
+    # Call _store_upload_local with target file and second option (_2) already
+    # present. Expect success and resulting filename with _3 appended
+    def test_store_upload_local_direct_2files_exist_rename_true(self):
+        tu = self._test_store_upload_local_setup()
+        # Create second test filename (the first is created in setup above).
+        filestore_base = getattr(local_settings, 'FILE_STORE_PATH', None)
+        target_file_dir = os.path.join(filestore_base, 'test_storage')
+        # This dir is created in the ..._local_setup call above...
+        assert os.path.exists(target_file_dir)
+        with open(os.path.join(target_file_dir, 'testfile_2.txt'), 'a') as f:
+            f.write('\n')
+        su = _store_upload_local('/test_storage', 'testfile.txt', tu, True)
+        self.assertEqual(
+            os.path.basename(su.file.name), 'testfile_3.txt',
+            'The file was not stored with the expected renamed filename.')
 
     def test_store_upload_local_copy_to_store_fails(self):
         tu = TemporaryUpload.objects.get(upload_id=self.upload_id)
@@ -349,6 +434,12 @@ class ApiTestCase(TestCase):
                             'storage location'):
                         _store_upload_local('/test_storage', 'testfile.txt',
                                             tu)
+
+# test_store_upload_invalid_id_rename_false: Call store_upload with an invalid
+#    ID that doesn't fit the required ID format (rename_if_exists=false).
+#
+# test_store_upload_invalid_id_rename_true: Call store_upload with an invalid
+#    ID that doesn't fit the required ID format (rename_if_exists=true).
 
     def tearDown(self):
         upload_tmp_base = getattr(local_settings, 'UPLOAD_TMP', None)
@@ -391,6 +482,22 @@ class ApiTestCase(TestCase):
                 os.path.isfile(test_target_file)):
             LOG.debug('Removing test target file: <%s>' % test_target_file)
             os.remove(test_target_file)
+        ttf_idx = test_target_file.rfind('.')
+        test_target_file_alt2 = (
+            test_target_file[0:ttf_idx] + '_2' + test_target_file[ttf_idx:])
+        test_target_file_alt3 = (
+            test_target_file[0:ttf_idx] + '_3' + test_target_file[ttf_idx:])
+        if (os.path.exists(test_target_file_alt2) and
+                os.path.isfile(test_target_file_alt2)):
+            LOG.debug('Removing test target file: <%s>'
+                      % test_target_file_alt2)
+            os.remove(test_target_file_alt2)
+        if (os.path.exists(test_target_file_alt3) and
+                os.path.isfile(test_target_file_alt3)):
+            LOG.debug('Removing test target file: <%s>'
+                      % test_target_file_alt3)
+            os.remove(test_target_file_alt3)
+
         if (os.path.exists(test_target_file2) and
                 os.path.isfile(test_target_file2)):
             LOG.debug('Removing test target file 2:<%s>' % test_target_file2)
