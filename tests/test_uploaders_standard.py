@@ -12,11 +12,7 @@ from django_drf_filepond.models import TemporaryUpload
 from django_drf_filepond.renderers import PlainTextRenderer
 from tests.utils import _setupRequestData
 
-# Python 2/3 support
-try:
-    from unittest.mock import MagicMock
-except ImportError:
-    from mock import MagicMock
+from unittest.mock import MagicMock
 
 LOG = logging.getLogger(__name__)
 #
@@ -64,11 +60,16 @@ class UploadersFileStandardTestCase(TestCase):
         r = self.uploader.handle_upload(self.request, self.upload_id,
                                         self.file_id)
         self.assertEqual(r.status_code, 200, 'Response status code is invalid')
-        self.assertEqual(r.data, self.upload_id, 'Response data is invalid')
+
         tu = TemporaryUpload.objects.get(upload_id=self.upload_id)
-        self.assertEqual(tu.file_id, self.file_id,
+        fileid = tu.file_id
+        uploadname = tu.upload_name
+        tu.delete()
+
+        self.assertEqual(r.data, self.upload_id, 'Response data is invalid')
+        self.assertEqual(fileid, self.file_id,
                          'The TemporaryUpload stored file_id is not correct.')
-        self.assertEqual(tu.upload_name, self.file_name,
+        self.assertEqual(uploadname, self.file_name,
                          'The TemporaryUpload upload_name is not correct.')
 
     def test_handle_file_upload_invalid_upload_id(self):
@@ -106,7 +107,7 @@ class UploadersFileStandardTestCase(TestCase):
         # When run through DRF, the ParseError raised by handle_upload would
         # be captured and converted into a 400 response. Here we have to
         # capture the ParseError directly to check that this is working.
-        with self.assertRaisesMessage(
-                ParseError, 'Could not find upload_field_name in request data.'):
+        with self.assertRaisesMessage(ParseError, 'Could not find '
+                                      'upload_field_name in request data.'):
             self.uploader.handle_upload(self.request, self.upload_id,
                                         self.file_id)

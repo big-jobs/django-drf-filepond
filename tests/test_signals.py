@@ -7,12 +7,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from tempfile import mkstemp, mkdtemp
 from django.core.files.storage import FileSystemStorage
 
-# On Python 3.3+ we have unittest.Mock in the main system library
-# On 2.7 it is installed as a dependency.
-try:
-    from unittest.mock import Mock
-except ImportError:
-    from mock import Mock
+from unittest.mock import Mock
 
 LOG = logging.getLogger(__name__)
 
@@ -32,6 +27,7 @@ class SignalsTestCase(TestCase):
         # Mock a TemporaryUpload instance object
         tu = Mock(spec=TemporaryUpload)
         upload_file = Mock(spec=SimpleUploadedFile)
+        original_models_storage = models.storage
         models.storage = Mock(spec=FileSystemStorage)
         models.storage.location = tmp_dir_split[0]
 
@@ -39,5 +35,6 @@ class SignalsTestCase(TestCase):
         tu.upload_id = tmp_dir_split[1]
         tu.file = upload_file
         delete_temp_upload_file(None, tu)
+        models.storage = original_models_storage
         self.assertFalse(os.path.exists(path), 'Test temp file was not '
                          'removed by the signal handler.')

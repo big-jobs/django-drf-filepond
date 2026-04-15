@@ -22,13 +22,7 @@ from django_drf_filepond.models import TemporaryUpload, StoredUpload
 
 import django_drf_filepond.drf_filepond_settings as local_settings
 
-# Python 2/3 support
-try:
-    from unittest.mock import MagicMock
-    from unittest.mock import patch
-except ImportError:
-    from mock import MagicMock
-    from mock import patch
+from unittest.mock import MagicMock, patch
 
 store_upload = None
 

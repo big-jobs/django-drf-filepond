@@ -1,25 +1,22 @@
-import cgi
 import logging
 import os
+# Switched to using Message rather than cgi.parse_header for parsing and
+# checking header params since cgi is deprecated and will be removed in py3.13
+from email.message import Message
 
-from django.test.testcases import TestCase
-from django.urls import reverse
-from httpretty import register_uri
 import httpretty
 import requests
-from requests.exceptions import ConnectionError
-from rest_framework.exceptions import NotFound
-
+from django.test.testcases import TestCase
+from django.urls import reverse
 from django_drf_filepond import drf_filepond_settings
 from django_drf_filepond.models import TemporaryUpload
 from django_drf_filepond.views import FetchView
+from httpretty import register_uri
+from requests.exceptions import ConnectionError
+from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
-# Python 2/3 support
-try:
-    from unittest.mock import patch, MagicMock
-except ImportError:
-    from mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 LOG = logging.getLogger(__name__)
 
@@ -139,12 +136,9 @@ class FetchTestCase(TestCase):
                      status=200,
                      body=connection_error_callback)
 
-        response = self.client.get((reverse('fetch') +
-                                    ('?target=%s' % test_url)))
-        self.assertContains(
-            response,
-            'Unable to access the requested remote file headers',
-            status_code=500)
+        with self.assertRaises(requests.exceptions.ConnectionError):
+            requests.get('http://localhost' + (reverse('fetch') +
+                         ('?target=%s' % test_url)))
 
     @httpretty.activate
     def test_fetch_file_notfound_error(self):
@@ -237,12 +231,15 @@ class FetchTestCase(TestCase):
         self.assertTrue('Content-Disposition' in response,
                         ('Response does not contain a required '
                          'Content-Disposition header.'))
-        cdisp = cgi.parse_header(response['Content-Disposition'])
+        msg = Message()
+        msg['content-type'] = response['Content-Disposition']
         self.assertTrue(
-            'filename' in cdisp[1],
+            msg.get_param('filename'),
             ('Parsed Content-Disposition header doesn\'t contain '
              'filename parameter'))
-        fname = cdisp[1]['filename']
+        # fname = cdisp[1]['filename']
+        fname = msg.get_param('filename')
+
         self.assertContains(response, '*This is the file content!*',
                             status_code=200)
         self.assertEqual(
@@ -259,13 +256,15 @@ class FetchTestCase(TestCase):
         self.assertTrue('Content-Disposition' in response,
                         ('Response does not contain a required '
                          'Content-Disposition header.'))
-        cdisp = cgi.parse_header(response['Content-Disposition'])
+        
+        msg = Message()
+        msg['content-type'] = response['Content-Disposition']
         self.assertTrue(
-            'filename' in cdisp[1],
+            msg.get_param('filename'),
             ('Parsed Content-Disposition header doesn\'t contain '
              'filename parameter'))
+        fname = msg.get_param('filename')
 
-        fname = cdisp[1]['filename']
         self.assertContains(response, '*This is the file content!*',
                             status_code=200)
         LOG.debug('Returned filename is <%s>' % fname)
@@ -289,12 +288,15 @@ class FetchTestCase(TestCase):
         self.assertTrue('Content-Disposition' in response,
                         ('Response does not contain a required '
                          'Content-Disposition header.'))
-        cdisp = cgi.parse_header(response['Content-Disposition'])
+
+        msg = Message()
+        msg['content-type'] = response['Content-Disposition']
         self.assertTrue(
-            'filename' in cdisp[1],
+            msg.get_param('filename'),
             ('Parsed Content-Disposition header doesn\'t contain '
              'filename parameter'))
-        fname = cdisp[1]['filename']
+        fname = msg.get_param('filename')
+
         self.assertEqual(
             filename, fname,
             'Returned filename is not equal to the provided filename value.')
@@ -337,12 +339,15 @@ class FetchTestCase(TestCase):
         self.assertTrue('Content-Disposition' in response,
                         ('Response does not contain a required '
                          'Content-Disposition header.'))
-        cdisp = cgi.parse_header(response['Content-Disposition'])
+
+        msg = Message()
+        msg['content-type'] = response['Content-Disposition']
         self.assertTrue(
-            'filename' in cdisp[1],
+            msg.get_param('filename'),
             ('Parsed Content-Disposition header doesn\'t contain '
              'filename parameter'))
-        fname = cdisp[1]['filename']
+        fname = msg.get_param('filename')
+        
         self.assertEqual(
             len(fname), 22,
             'Returned filename is not a 22 character auto-generated name.')

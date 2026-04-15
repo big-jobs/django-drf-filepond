@@ -12,7 +12,6 @@ import os
 
 from django.test import TestCase
 from django.utils import timezone
-from django.core.files.base import File as DjangoFile
 
 from django_drf_filepond.api import get_stored_upload, \
     get_stored_upload_file_data
@@ -23,17 +22,7 @@ from django_drf_filepond.exceptions import ConfigurationError
 from django_drf_filepond.models import StoredUpload
 from django_drf_filepond.utils import _get_file_id
 
-# Python 2/3 support
-try:
-    from unittest.mock import patch
-except ImportError:
-    from mock import patch
-
-# There's no built in FileNotFoundError in Python 2
-try:
-    FileNotFoundError
-except NameError:
-    FileNotFoundError = IOError
+from unittest.mock import patch
 
 LOG = logging.getLogger(__name__)
 
@@ -90,7 +79,7 @@ class ApiGetUploadTestCase(TestCase):
         # Updated to reflect changes to StoredUpload to use a FileField (#31)
         # As a result, get_stored_upload_file_data now returns the raw bytes
         # rather than a BytesIO object.
-        (filename, byte_data) = get_stored_upload_file_data(self.su)
+        (filename, byte_data) = get_stored_upload_file_data(self.su, None)
         file_data = byte_data.decode()
         self.assertEqual(file_data, self.file_content,
                          'Returned file content not correct.')
@@ -103,7 +92,7 @@ class ApiGetUploadTestCase(TestCase):
         with self.assertRaisesMessage(
                 ConfigurationError,
                 'The file upload settings are not configured correctly.'):
-            get_stored_upload_file_data(self.su)
+            get_stored_upload_file_data(self.su, None)
         local_settings.FILE_STORE_PATH = fsp
 
     def test_get_remote_stored_upload_data(self):
@@ -113,7 +102,7 @@ class ApiGetUploadTestCase(TestCase):
             self.file_content.encode())
         mock_storage_backend.exists.return_value = True
         # Updated as per comment in "test_store_upload_unset_file_store_path"
-        (filename, byte_data) = get_stored_upload_file_data(self.su)
+        (filename, byte_data) = get_stored_upload_file_data(self.su, None)
         file_data = byte_data.decode()
         local_settings.STORAGES_BACKEND = None
         django_drf_filepond.api.storage_backend = None
@@ -129,7 +118,7 @@ class ApiGetUploadTestCase(TestCase):
         mock_storage_backend.exists.return_value = True
         with patch('django_drf_filepond.api._init_storage_backend') as m:
             django_drf_filepond.api.storage_backend_initialised = False
-            get_stored_upload_file_data(self.su)
+            get_stored_upload_file_data(self.su, None)
             local_settings.STORAGES_BACKEND = None
             django_drf_filepond.api.storage_backend = None
             try:
@@ -151,7 +140,7 @@ class ApiGetUploadTestCase(TestCase):
                 FileNotFoundError,
                 ('File [%s] for upload_id [%s] not found on remote '
                  'file store.' % (file_path, self.su.upload_id))):
-            get_stored_upload_file_data(self.su)
+            get_stored_upload_file_data(self.su, None)
             local_settings.STORAGES_BACKEND = None
             django_drf_filepond.api.storage_backend = None
 

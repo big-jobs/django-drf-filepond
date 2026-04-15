@@ -6,12 +6,18 @@
 
 django-drf-filepond supports remote storage of uploads via [*django-storages*](https://django-storages.readthedocs.io/)
 
-:new: Support for large file uploads (> ~2GB) now available from version 0.4.0 (see [#57](https://github.com/ImperialCollegeLondon/django-drf-filepond/issues/57)).<br/>
-:new: Support for filepond chunked uploads now available from version 0.3.0.
+:new: Release v0.5.0 is now available including Python 3.10 support, memory
+efficiency improvements when working with large files, bug fixes and updates to
+the testing infrastructure along with improved test coverage.
 
+:warning: Release v0.5.0 deprecates Python 2.7 and Python 3.5 support. This
+will be the last release to support Python 2.7 and Python 3.5. Both these
+versions of Python have now been "end-of-life" since 2020.
 
 :warning: **Release v0.4.0 includes a database update** in relation to the large upload support. If you don't wish to apply DB migrations within your application at this stage, please continue to use django-drf-filepond [v0.3.1](https://pypi.org/project/django-drf-filepond/0.3.1/). :warning:
 
+See the [Release Notes](#Release-notes) section for further release
+information.
 
 Further documentation and a tutorial are available at [https://django-drf-filepond.readthedocs.io](https://django-drf-filepond.readthedocs.io).
 
@@ -235,6 +241,14 @@ _**Parameters:**_
 
 `destination_file_path`: The location where the file should be stored. This location will be appended to the base file storage location as defined using the `DJANGO_DRF_FILEPOND_FILE_STORE_PATH` parameter, or, for remote storage backends, the location configured using the relevant *django-storages* parameters. If you pass an absolute path beginning with `/`, the leading `/` will be removed. The path that you provide should also include the target filename.
 
+`_rename_if_exists_` (optional, default value: `False`): If `rename_if_exists`
+is `False` (the default value if not specified), an error will be thrown if the
+file cannot be stored to the specified filename. If `rename_if_exists` is
+`True`, an underscore (_) followed by a number (from 2 upwards) will be
+appended to the filename prior to any file extension. If a file with _2 at the
+end of the name (but prior to the extension) already exists, the number will be
+continually incremented until an available filename is found.
+
 _**Returns:**_
 
 A `django_drf_filepond.models.StoredUpload` object representing the stored upload.
@@ -346,6 +360,51 @@ DJANGO_DRF_FILEPOND_PERMISSION_CLASSES = {
 You can add more than one permission for each endpoint. 
 
 The above list includes all the permission names currently defined on django-drf-filepond views. The naming convention used is `<METHOD_NAME>_<ENDPOINT_NAME>` where `<METHOD_NAME>` is the method name used for a request and `<ENDPOINT_NAME>` is the URL endpoint called. So, for example, a `POST` request to `/fp/process` would be handled by the permission classes defined for `POST_PROCESS`.
+
+### Release notes
+
+##### v0.5.2
+
+django-drf-filepond v0.5.2 includes the following additional functionality from
+v0.5.1: 
+
+ - Add `rename_if_exists` parameter to `store_upload` API call to support
+   automatic renaming of files being saved to the file store if the requested
+   filename exists (#120).
+
+##### v0.5.1
+
+Maintenance release that updates dependency versions and fixes the test
+infrastructure to take account of some changes in GitHub Actions. 
+
+##### v0.5.0
+
+django-drf-filepond v0.5.0 includes additional functionality and bug fixes:
+
+ - Add Python 3.10 support
+ - Memory efficiency improvements when handling large files. Previously, the
+   way chunked uploads were handled meant that twice as much memory as the size
+   of an upload was being used. This has been resolved with an extensive
+   redesign of the chunked upload handler.
+ - Testing of the code has been switched to use Pytest with Tox.
+ - Test coverage has been significantly improved.
+
+:warning: _Please note:_ v0.5.0 deprecates Python 2.7 and Python 3.5 support.
+This will be the last release to support Python 2.7 and Python 3.5. Both these
+versions of Python have now been "end-of-life" since 2020. :warning:
+
+See full details of the particular changes merged in the [v0.5.0 release notes on GitHub](https://github.com/ImperialCollegeLondon/django-drf-filepond/releases/tag/v0.5.0).
+
+##### v0.4.0
+
+ - Adds support for large file uploads (> ~2GB) (see [#57](https://github.com/ImperialCollegeLondon/django-drf-filepond/issues/57)).
+
+:warning: **Release v0.4.0 includes a database update** in relation to the large upload support. If you don't wish to apply DB migrations within your application at this stage, please continue to use django-drf-filepond [v0.3.1](https://pypi.org/project/django-drf-filepond/0.3.1/). :warning:
+
+##### v0.3.0
+
+ - Adds support for filepond chunked uploads.
+
 
 ### License
 

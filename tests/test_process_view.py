@@ -1,4 +1,4 @@
-from django_drf_filepond.models import TemporaryUploadChunked
+from django_drf_filepond.models import TemporaryUpload, TemporaryUploadChunked
 from io import BytesIO
 import logging
 import os
@@ -12,19 +12,14 @@ from django.test.client import encode_multipart, RequestFactory
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.response import Response
-from six import ensure_text
 
-from django_drf_filepond import drf_filepond_settings, uploaders
+from django_drf_filepond import drf_filepond_settings
 import django_drf_filepond
 import django_drf_filepond.views as views
 from tests.utils import remove_file_upload_dir_if_required
 
 
-# Python 2/3 support
-try:
-    from unittest.mock import patch, MagicMock, Mock, ANY
-except ImportError:
-    from mock import patch, MagicMock, Mock, ANY
+from unittest.mock import patch, MagicMock, Mock, ANY
 
 LOG = logging.getLogger(__name__)
 
@@ -100,7 +95,7 @@ class ProcessTestCase(TestCase):
         (encoded_form, content_type) = self._get_encoded_form('testfile.dat')
 
         req = self.rf.post(reverse('process'),
-                      data=encoded_form, content_type=content_type)
+                           data=encoded_form, content_type=content_type)
         pv = views.ProcessView.as_view()
         response = pv(req)
 
@@ -115,7 +110,7 @@ class ProcessTestCase(TestCase):
         (encoded_form, content_type) = self._get_encoded_form('testfile.dat')
 
         req = self.rf.post(reverse('process'),
-                      data=encoded_form, content_type=content_type)
+                           data=encoded_form, content_type=content_type)
         pv = views.ProcessView.as_view()
         response = pv(req)
         views.storage = old_storage
@@ -132,22 +127,23 @@ class ProcessTestCase(TestCase):
                        SimpleUploadedFile('test.txt', self.test_data.read())}
         enc_form = encode_multipart('abc', upload_form)
         req = self.rf.post(reverse('process'), data=enc_form,
-                      content_type='multipart/form-data; boundary=abc')
+                           content_type='multipart/form-data; boundary=abc')
         pv = views.ProcessView.as_view()
         response = pv(req)
         self.assertEqual(response.status_code, 400, 'Expecting 400 error due'
                          ' to invalid data being provided.')
         self.assertTrue('detail' in response.data,
                         'Error detail missing in response.')
-        self.assertIn(response.data['detail'], ('Could not find upload_field_name'
-                                                ' in request data.'))
+        self.assertIn(response.data['detail'], ('Could not find '
+                                                'upload_field_name in '
+                                                'request data.'))
 
     def test_upload_non_file_data(self):
         cf = ContentFile(self.test_data.read(), name='test.txt')
         upload_form = {'filepond': cf}
         enc_form = encode_multipart('abc', upload_form)
         req = self.rf.post(reverse('process'), data=enc_form,
-                      content_type='multipart/form-data; boundary=abc')
+                           content_type='multipart/form-data; boundary=abc')
         req.FILES['filepond'] = cf
         pv = views.ProcessView.as_view()
         response = pv(req)
@@ -173,16 +169,17 @@ class ProcessTestCase(TestCase):
         enc_form = encode_multipart(boundary, upload_form)
 
         req = self.rf.post(reverse('process'), data=enc_form,
-                      content_type='multipart/form-data; boundary=%s'
-                      % boundary)
+                           content_type='multipart/form-data; boundary=%s'
+                           % boundary)
         pv = views.ProcessView.as_view()
         response = pv(req)
         self.assertEqual(response.status_code, 400, 'Expecting 400 error due'
                          ' to invalid data being provided.')
         self.assertTrue('detail' in response.data,
                         'Error detail missing in response.')
-        self.assertIn(response.data['detail'], ('Could not find upload_field_name '
-                                                'in request data.'))
+        self.assertIn(response.data['detail'], ('Could not find '
+                                                'upload_field_name in request '
+                                                'data.'))
 
     def test_store_upload_with_storage_outside_BASE_DIR_without_enable(self):
         old_storage = views.storage
@@ -190,7 +187,7 @@ class ProcessTestCase(TestCase):
         (encoded_form, content_type) = self._get_encoded_form('testfile.dat')
 
         req = self.rf.post(reverse('process'),
-                      data=encoded_form, content_type=content_type)
+                           data=encoded_form, content_type=content_type)
         pv = views.ProcessView.as_view()
         response = pv(req)
         views.storage = old_storage
@@ -214,12 +211,15 @@ class ProcessTestCase(TestCase):
         (encoded_form, content_type) = self._get_encoded_form('testfile.dat')
 
         req = self.rf.post(reverse('process'),
-                      data=encoded_form, content_type=content_type)
+                           data=encoded_form, content_type=content_type)
         pv = views.ProcessView.as_view()
         response = pv(req)
         views.storage = old_storage
         drf_filepond_settings.UPLOAD_TMP = old_UPLOAD_TMP
         drf_filepond_settings.ALLOW_EXTERNAL_UPLOAD_DIR = False
+        # Remove the TemporaryUpload object to remove the file created on
+        # disk by this test.
+        TemporaryUpload.objects.get(upload_id=response.data).delete()
         self.assertEqual(response.status_code, 200, 'Expecting upload to be '
                          'successful.')
 
@@ -232,7 +232,7 @@ class ProcessTestCase(TestCase):
         (encoded_form, content_type) = self._get_encoded_form('testfile.dat')
 
         req = self.rf.post(reverse('process'),
-                      data=encoded_form, content_type=content_type)
+                           data=encoded_form, content_type=content_type)
         pv = views.ProcessView.as_view()
         response = pv(req)
 
@@ -249,8 +249,8 @@ class ProcessTestCase(TestCase):
         # phase and it has already imported the unmocked object.
         # For testing we manually assign the mocked object here and then
         # revert to the original after the view call.
-        upload_id = ensure_text('ababababababababababab')
-        file_id = ensure_text('xyxyxyxyxyxyxyxyxyxyxy')
+        upload_id = str('ababababababababababab')
+        file_id = str('xyxyxyxyxyxyxyxyxyxyxy')
         mock_gfid = MagicMock(spec='django_drf_filepond.utils._get_file_id')
         mock_gfid.side_effect = [upload_id, file_id, upload_id, file_id]
 
@@ -273,8 +273,8 @@ class ProcessTestCase(TestCase):
 
     def test_chunked_upload_large_file(self):
         # Mock _get_file_id to return the specified file and upload IDs.
-        upload_id = ensure_text('ababababababababababab')
-        file_id = ensure_text('xyxyxyxyxyxyxyxyxyxyxy')
+        upload_id = str('ababababababababababab')
+        file_id = str('xyxyxyxyxyxyxyxyxyxyxy')
         mock_gfid = MagicMock(spec='django_drf_filepond.utils._get_file_id')
         mock_gfid.side_effect = [upload_id, file_id, upload_id, file_id]
         original_gfid = django_drf_filepond.views._get_file_id
