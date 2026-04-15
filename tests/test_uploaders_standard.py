@@ -12,11 +12,7 @@ from django_drf_filepond.models import TemporaryUpload
 from django_drf_filepond.renderers import PlainTextRenderer
 from tests.utils import _setupRequestData
 
-# Python 2/3 support
-try:
-    from unittest.mock import MagicMock
-except ImportError:
-    from mock import MagicMock
+from unittest.mock import MagicMock
 
 LOG = logging.getLogger(__name__)
 #

@@ -1,5 +1,4 @@
 import logging
-import six
 
 from django.test import TestCase
 
@@ -11,11 +10,7 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from django_drf_filepond.utils import _get_file_id
 from tests.utils import _setupRequestData
 
-# Python 2/3 support
-try:
-    from unittest.mock import MagicMock
-except ImportError:
-    from mock import MagicMock
+from unittest.mock import MagicMock
 
 LOG = logging.getLogger(__name__)
 #
@@ -198,7 +193,7 @@ class UploadersBaseTestCase(TestCase):
 
     def test_file_id_wrong_data_type(self):
         # Test using bytes instead of str
-        file_id = six.ensure_binary(_get_file_id())
+        file_id = _get_file_id().encode()
         self.assertFalse(
             FilepondFileUploader._file_id_valid(file_id),
             ('The provided file ID is of the wrong data type, this test '

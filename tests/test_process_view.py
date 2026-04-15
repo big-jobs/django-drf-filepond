@@ -12,7 +12,6 @@ from django.test.client import encode_multipart, RequestFactory
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.response import Response
-from six import ensure_text
 
 from django_drf_filepond import drf_filepond_settings
 import django_drf_filepond
@@ -20,11 +19,7 @@ import django_drf_filepond.views as views
 from tests.utils import remove_file_upload_dir_if_required
 
 
-# Python 2/3 support
-try:
-    from unittest.mock import patch, MagicMock, Mock, ANY
-except ImportError:
-    from mock import patch, MagicMock, Mock, ANY
+from unittest.mock import patch, MagicMock, Mock, ANY
 
 LOG = logging.getLogger(__name__)
 
@@ -254,8 +249,8 @@ class ProcessTestCase(TestCase):
         # phase and it has already imported the unmocked object.
         # For testing we manually assign the mocked object here and then
         # revert to the original after the view call.
-        upload_id = ensure_text('ababababababababababab')
-        file_id = ensure_text('xyxyxyxyxyxyxyxyxyxyxy')
+        upload_id = str('ababababababababababab')
+        file_id = str('xyxyxyxyxyxyxyxyxyxyxy')
         mock_gfid = MagicMock(spec='django_drf_filepond.utils._get_file_id')
         mock_gfid.side_effect = [upload_id, file_id, upload_id, file_id]
 
@@ -278,8 +273,8 @@ class ProcessTestCase(TestCase):
 
     def test_chunked_upload_large_file(self):
         # Mock _get_file_id to return the specified file and upload IDs.
-        upload_id = ensure_text('ababababababababababab')
-        file_id = ensure_text('xyxyxyxyxyxyxyxyxyxyxy')
+        upload_id = str('ababababababababababab')
+        file_id = str('xyxyxyxyxyxyxyxyxyxyxy')
         mock_gfid = MagicMock(spec='django_drf_filepond.utils._get_file_id')
         mock_gfid.side_effect = [upload_id, file_id, upload_id, file_id]
         original_gfid = django_drf_filepond.views._get_file_id

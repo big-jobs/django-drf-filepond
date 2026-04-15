@@ -27,19 +27,7 @@ import django_drf_filepond.drf_filepond_settings as local_settings
 from django.utils import timezone
 from django_drf_filepond.exceptions import ConfigurationError
 
-# Python 2/3 support
-try:
-    from unittest.mock import MagicMock
-    from unittest.mock import patch
-except ImportError:
-    from mock import MagicMock
-    from mock import patch
-
-# There's no built in FileNotFoundError, FileExistsError in Python 2
-try:
-    FileNotFoundError
-except NameError:
-    FileNotFoundError = IOError
+from unittest.mock import MagicMock, patch
 
 LOG = logging.getLogger(__name__)
 

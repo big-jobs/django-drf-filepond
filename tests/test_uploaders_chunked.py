@@ -10,21 +10,10 @@ from rest_framework.request import Request
 
 from django_drf_filepond.uploaders import FilepondChunkedFileUploader, storage
 import django_drf_filepond
-from six import ensure_text, ensure_binary
 
 from tests.utils import _setupRequestData, prep_response
 
-# Python 2/3 support
-try:
-    from unittest.mock import MagicMock, patch
-except ImportError:
-    from mock import MagicMock, patch
-
-# There's no built in FileNotFoundError in Python 2
-try:
-    FileNotFoundError
-except NameError:
-    FileNotFoundError = IOError
+from unittest.mock import MagicMock, patch
 
 LOG = logging.getLogger(__name__)
 #
@@ -190,8 +179,7 @@ class UploadersFileChunkedTestCase(TestCase):
         self.request = MagicMock(spec=Request)
         self.request.META = {}
         self.request.user = AnonymousUser()
-        self.request.data = ensure_text(
-            'This is the test upload chunk data...')
+        self.request.data = 'This is the test upload chunk data...'
 
     # Set up a TemporaryUploadChunked database object for use in the
     # _store_upload functions.
@@ -425,8 +413,7 @@ class UploadersFileChunkedTestCase(TestCase):
         self.request.META = {'HTTP_UPLOAD_OFFSET': 150000,
                              'HTTP_UPLOAD_LENGTH': tuc.total_size,
                              'HTTP_UPLOAD_NAME': tuc.upload_name}
-        self.request.data = ensure_binary(
-            'This is the test upload chunk data...')
+        self.request.data = b'This is the test upload chunk data...'
 
         with patch('os.path.exists', return_value=True):
             res = self.uploader._handle_chunk_upload(self.request,

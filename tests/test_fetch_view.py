@@ -16,11 +16,7 @@ from requests.exceptions import ConnectionError
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
-# Python 2/3 support
-try:
-    from unittest.mock import MagicMock, patch
-except ImportError:
-    from mock import MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 LOG = logging.getLogger(__name__)
 

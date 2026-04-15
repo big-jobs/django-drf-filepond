@@ -7,12 +7,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from tempfile import mkstemp, mkdtemp
 from django.core.files.storage import FileSystemStorage
 
-# On Python 3.3+ we have unittest.Mock in the main system library
-# On 2.7 it is installed as a dependency.
-try:
-    from unittest.mock import Mock
-except ImportError:
-    from mock import Mock
+from unittest.mock import Mock
 
 LOG = logging.getLogger(__name__)
 

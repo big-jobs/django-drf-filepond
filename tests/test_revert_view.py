@@ -11,11 +11,7 @@ from django_drf_filepond.models import TemporaryUpload, storage
 import django_drf_filepond.drf_filepond_settings as local_settings
 from django_drf_filepond.views import RevertView
 
-# Python 2/3 support
-try:
-    from unittest.mock import MagicMock
-except ImportError:
-    from mock import MagicMock
+from unittest.mock import MagicMock
 
 LOG = logging.getLogger(__name__)
 

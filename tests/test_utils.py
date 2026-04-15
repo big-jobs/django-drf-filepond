@@ -5,18 +5,13 @@ from django.contrib.auth.models import User, AnonymousUser
 from django.test import TestCase
 from rest_framework.request import Request
 import shortuuid
-from six import text_type
 
 import django_drf_filepond.drf_filepond_settings as local_settings
 from django_drf_filepond.utils import _get_user, _get_file_id, \
     get_local_settings_base_dir
 
 
-# Python 2/3 support
-try:
-    from unittest.mock import MagicMock
-except ImportError:
-    from mock import MagicMock
+from unittest.mock import MagicMock
 
 LOG = logging.getLogger(__name__)
 
@@ -54,7 +49,7 @@ class UtilsTestCase(TestCase):
 
     def test_get_file_id(self):
         fid = _get_file_id()
-        self.assertTrue(isinstance(fid, text_type),
+        self.assertTrue(isinstance(fid, str),
                         'The file ID must be a string.')
         id_format = re.compile('^([%s]){22}$' % (shortuuid.get_alphabet()))
         self.assertRegex(fid, id_format, ('The generated ID does not match '

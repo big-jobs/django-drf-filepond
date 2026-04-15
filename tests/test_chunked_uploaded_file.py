@@ -16,17 +16,7 @@ from django.test.testcases import TestCase
 from django_drf_filepond.models import TemporaryUploadChunked
 from django_drf_filepond.utils import DrfFilepondChunkedUploadedFile
 
-# Tests in this module require a version of mock that provides mock_open
-# with support for a size parameter on it's returned readable object.
-# We therefore use only the third party mock module (in place of unittest.
-# mock) here since this is defined as a dependency in setup.py anyway.
-from mock import MagicMock, Mock, call, mock_open, patch
-
-# There's no built in FileNotFoundError in Python 2
-try:
-    FileNotFoundError
-except NameError:
-    FileNotFoundError = IOError
+from unittest.mock import MagicMock, Mock, call, mock_open, patch
 
 LOG = logging.getLogger(__name__)
 

@@ -12,15 +12,7 @@ from django.utils import timezone
 from django_drf_filepond.models import StoredUpload
 from django_drf_filepond.utils import _get_file_id
 
-# Python 2/3 support
-try:
-    from unittest.mock import patch
-except ImportError:
-    from mock import patch
-try:
-    FileNotFoundError
-except NameError:
-    FileNotFoundError = IOError
+from unittest.mock import patch
 
 LOG = logging.getLogger(__name__)
 
