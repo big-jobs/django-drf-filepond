@@ -59,17 +59,25 @@ def _init_storage_backend():
 # either the 22-char upload_id or the value provided to the
 # destination_file_path parameter as a query string parameter using the
 # "id" key.
-def store_upload(upload_id, destination_file_path):
+def store_upload(upload_id, destination_file_path, rename_if_exists=False):
     """
     Store the temporary upload with the specified upload ID to the
-    destination_file_path. destination_file_path should be a directory only
-    and not include the target name of the file.
+    destination_file_path/name. destination_file_path should be either a
+    directory path (ending in '/'), and not include the target name of the
+    file, or a full path to the file location where the file should be stored.
 
-    If destination_file_name is not provided, the file
-    is stored using the name it was originally uploaded with. If
-    destination_file_name is provided, this is the name used to store the
-    file. i.e. the file will be stored at
-        destination_file_path + destination_file_name
+    If destination_file_path does not include the file name (i.e. it ends with
+    a path separator such as '\' or '/'), the file is stored using the name
+    it was originally uploaded with, at the specified path location (under the
+    pre-set storage location). If a full path including a file name is
+    provided, destination_file_path is provided, this is the name used to
+    store the file. i.e. the file will be stored using the specified name,
+    if a file of that name is not already present.
+
+    If rename_if_exists is False, an error will be thrown if the target file
+    already exists. If rename_if_exists is True, then _n will be appended to
+    the filename where 'n' is the first available number of a filename that is
+    not already present.
     """
     # TODO: If the storage backend is not initialised, init now - this will
     # be removed when this module is refactored into a class.
@@ -118,11 +126,39 @@ def store_upload(upload_id, destination_file_path):
     if storage_backend:
         return _store_upload_remote(destination_path, destination_name, tu)
     else:
-        return _store_upload_local(destination_path, destination_name, tu)
+        return _store_upload_local(destination_path, destination_name, tu,
+                                   rename_if_exists=rename_if_exists)
+
+
+def _get_available_target_file_path(target_dir, target_filename,
+                                    rename_if_exists=False):
+    target_file_path = os.path.join(target_dir, target_filename)
+    if not os.path.exists(target_file_path):
+        return target_file_path
+
+    if rename_if_exists:
+        target_file_dir = os.path.dirname(target_file_path)
+        idx = 2
+        while os.path.exists(target_file_path):
+            root, ext = os.path.splitext(target_filename)
+            # Temporary removal of the use of format string syntax
+            # to support old versions of Python for now. This support
+            # will be removed in subsequent versions of this library.
+            target_file_path = os.path.join(
+                target_file_dir, '%s_%s%s' % (root, idx, ext))
+            # target_file_path = os.path.join(
+            #     target_file_dir, f'{root}_{idx}{ext}')
+            idx += 1
+        return target_file_path
+
+    LOG.error('File with specified name and path <%s> already exists'
+              % target_file_path)
+    raise FileExistsError('The specified temporary file cannot be stored'
+                          ' to the specified location - file exists.')
 
 
 def _store_upload_local(destination_file_path, destination_file_name,
-                        temp_upload):
+                        temp_upload, rename_if_exists=False):
     file_path_base = local_settings.FILE_STORE_PATH
 
     # If called via store_upload, this has already been checked but in
@@ -132,7 +168,7 @@ def _store_upload_local(destination_file_path, destination_file_name,
 
     # Is this necessary? Checking on every file storage in case the directory
     # was removed but not sure that this is really necessary.
-    if((not os.path.exists(file_path_base)) or
+    if ((not os.path.exists(file_path_base)) or
             (not os.path.isdir(file_path_base))):
         raise FileNotFoundError(
             'The local output directory [%s] defined by FILE_STORE_PATH is '
@@ -147,19 +183,18 @@ def _store_upload_local(destination_file_path, destination_file_name,
     # file name from temp_upload and use this
     if not target_filename:
         target_filename = temp_upload.upload_name
-    destination_file_path = os.path.join(destination_file_path,
-                                         target_filename)
 
-    # Check we're not about to overwrite anything
-    target_file_path = os.path.join(target_dir, target_filename)
-    if os.path.exists(target_file_path):
-        LOG.error('File with specified name and path <%s> already exists'
-                  % target_file_path)
-        raise FileExistsError('The specified temporary file cannot be stored'
-                              ' to the specified location - file exists.')
+    # This is the full file path used to move the file to its final location
+    target_file_path = _get_available_target_file_path(
+        target_dir, target_filename, rename_if_exists=rename_if_exists)
+
+    # This is the relative file path (relative to the storage_backend
+    # location) that we store with the StoredUpload record.
+    destination_file_relative_path = os.path.join(
+        destination_file_path, os.path.basename(target_file_path))
 
     su = StoredUpload(upload_id=temp_upload.upload_id,
-                      file=destination_file_path,
+                      file=destination_file_relative_path,
                       uploaded=temp_upload.uploaded,
                       uploaded_by=temp_upload.uploaded_by)
     try:

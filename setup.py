@@ -5,7 +5,7 @@ with open("README.md", "r") as readme:
 
 setup(
     name="django-drf-filepond",
-    version="0.5.0.1",
+    version="0.5.2.1",
     description="Filepond server app for Django REST Framework",
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -23,9 +23,13 @@ setup(
     install_requires=[
         "Django>=1.11.29,<2.0.0;python_version=='2.7'",
         "Django>=2.2.25,<3.0.0;python_version=='3.5'",
-        "Django>=2.2.25;python_version>='3.6'",
+        "Django>=3.2.25,<4.0.0;python_version>='3.6' and python_version<='3.7'",
+        "Django>=4.2.26,<5.0.0;python_version>='3.8'",  #  and python_version<='3.9'",
+        # "Django>=5.2.8;python_version>='3.10'",
         "djangorestframework==3.9.4;python_version=='2.7'",
-        "djangorestframework>=3.11.2;python_version>='3.5'",
+        "djangorestframework>=3.12.4;python_version>='3.5'",
+        "djangorestframework==3.14.0;python_version>='3.6' and python_version<='3.7'",
+        "djangorestframework>=3.15.2;python_version>='3.8'",
         "shortuuid==0.5.0;python_version=='2.7'",
         "shortuuid>=0.5.0;python_version>='3.5'",
         "requests>=2.20.1",
@@ -60,6 +64,9 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Topic :: Software Development :: Libraries :: Python Modules",
     ]
 )
